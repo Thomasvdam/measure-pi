@@ -20,7 +20,7 @@ GRID = [
     [[144, 7], [144, 23], [144, 39], [144, 55], [144, 71], [144, 87], [144, 103], [144, 119]],
 ]
 
-class LaunchPadMini:
+class LaunchpadMini:
     def __init__(self, midi_in, midi_out):
         self._midi_in = midi_in
         self._midi_out = midi_out

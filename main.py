@@ -50,6 +50,11 @@ phrases = [
     grid(3, 4), grid(4, 4), grid(4, 3), grid(3, 3)
 ]
 
+# TODO: Periods? 1536 pulses. Usual cadence is weak > strong
+periods = [
+    
+]
+
 def update_lp():
     global pulse_count
     global quarter_notes
