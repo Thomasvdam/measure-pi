@@ -15,20 +15,25 @@ class MeasurePi:
 
         self._pulse_quarter_notes = PulseTracker(24) # Direct MIDI pulses
         self._quarter_notes = [
-            (0, 4), (1, 5), (2, 6), (3, 7),
-            (4, 7), (5, 6), (6, 5), (7, 4),
-            (7, 3), (6, 2), (5, 1), (4, 0),
-            (3, 0), (2, 1), (1, 2), (0, 3)
+            (4, 0), (5, 1), (6, 2), (7, 3),
+            (7, 4), (6, 5), (5, 6), (4, 7),
+            (3, 7), (2, 6), (1, 5), (0, 4),
+            (0, 3), (1, 2), (2, 1), (3, 0)
         ];
         self._pulse_quarter_notes.on_divisor(self._handle_quarter_note)
 
         self._pulse_phrases = PulseTracker(16) # 16 quarter notes
-        self._phrases = [(3, 4), (4, 4), (4, 3), (3, 3)]
-        self._phrase_colour = COLOUR_GREEN # Start with green
+        self._phrases = [(4, 3), (4, 4), (3, 4), (3, 3)]
+        self._phrase_colour = COLOUR_GREEN
         self._pulse_phrases.on_divisor(self._handle_phrase)
 
         self._pulse_periods = PulseTracker(4) # 4 phrases
-        self._periods = [COLOUR_GREEN, COLOUR_RED]
+        self._periods = [
+            [(4, 2), (5, 2), (5, 3)],
+            [(5, 4), (5, 5), (4, 5)],
+            [(3, 5), (2, 5), (2, 4)],
+            [(2, 3), (2, 2), (3, 2)]
+        ]
         self._pulse_periods.on_divisor(self._handle_period)
 
         # Reset visualisation
@@ -38,36 +43,55 @@ class MeasurePi:
     def _handle_input(self, event):
         message, deltatime = event
         if message[0] is TIMING_CLOCK:
-            data._pulse_quarter_notes.trigger_pulse()
+            self._pulse_quarter_notes.trigger_pulse()
         elif message[0] is SONG_START:
-            data._pulse_quarter_notes.reset_pulse()
+            self._pulse_quarter_notes.reset_pulse()
 
-    def _handle_quarter_note(self, note_number):
+    def _handle_quarter_note(self, note_number, reset):
         index = note_number % 16 # len(self._quarter_notes)
         # Reset all QN
         if index == 0:
             for location in self._quarter_notes:
                 self._lp.turn_pad_off(location)
-            self._lp.turn_pad_on(self._quarter_notes[index], COLOR_ORANGE, BRIGHTNESS_HIGH)
+            self._lp.turn_pad_on(self._quarter_notes[index], COLOUR_ORANGE, BRIGHTNESS_HIGH)
         else:
             # Turn previous pad dim
-            self._lp.turn_pad_on(self._quarter_notes[index - 1], COLOR_ORANGE)
-            self._lp.turn_pad_on(self._quarter_notes[index], COLOR_ORANGE, BRIGHTNESS_HIGH)
-        self._pulse_phrases.trigger_pulse()
+            self._lp.turn_pad_on(self._quarter_notes[index - 1], COLOUR_ORANGE)
+            self._lp.turn_pad_on(self._quarter_notes[index], COLOUR_ORANGE, BRIGHTNESS_HIGH)
+        if reset:
+            self._pulse_phrases.reset_pulse()
+        else:
+            self._pulse_phrases.trigger_pulse()
 
-    def _handle_phrase(self, phrase_number):
-        # Trigger period first as the phrase colour might update
-        self._pulse_periods.trigger_pulse()
-
+    def _handle_phrase(self, phrase_number, reset):
         index = phrase_number % 4 # len(self._phrases)
         if index == 0:
+            # Green for antecendent, red for consequent
+            if phrase_number % 8 == 0:
+                self._phrase_colour = COLOUR_GREEN
+            else:
+                self._phrase_colour = COLOUR_RED
             for location in self._phrases:
                 self._lp.turn_pad_off(location)
             self._lp.turn_pad_on(self._phrases[index], self._phrase_colour, BRIGHTNESS_HIGH)
         else:
             self._lp.turn_pad_on(self._phrases[index - 1], self._phrase_colour)
             self._lp.turn_pad_on(self._phrases[index], self._phrase_colour, BRIGHTNESS_HIGH)
-        
-    def _handle_period(self, period_number):
-        index = period_number % 2 # len(self._periods)
-        self._phrase_colour = self._phrase[index]
+        if reset:
+            self._pulse_periods.reset_pulse()
+        else:
+            self._pulse_periods.trigger_pulse()
+
+    def _handle_period(self, period_number, reset):
+        index = period_number % 4 # len(self._periods)
+        if index == 0:
+            for locations in self._periods:
+                for location in locations:
+                    self._lp.turn_pad_off(location)
+            for location in self._periods[index]:
+                self._lp.turn_pad_on(location, self._phrase_colour, BRIGHTNESS_HIGH)
+        else:
+            for location in self._periods[index - 1]:
+                self._lp.turn_pad_on(location, self._phrase_colour)
+            for location in self._periods[index]:
+                self._lp.turn_pad_on(location, self._phrase_colour, BRIGHTNESS_HIGH)
