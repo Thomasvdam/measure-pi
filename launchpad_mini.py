@@ -27,11 +27,11 @@ class LaunchpadMini:
 
     def turn_pad_on(self, location, colour, brightness=BRIGHTNESS_LOW):
         x, y = location
-        self._midi_out.send_message(grid[x][y] + [colour & brightness])
+        self._midi_out.send_message(GRID[x][y] + [colour & brightness])
     
     def turn_pad_off(self, location):
         x, y = location
-        self._midi_out.send_message(grid[x][y], [COLOUR_OFF])
+        self._midi_out.send_message(GRID[x][y] + [COLOUR_OFF])
 
     def turn_all_pads_off(self):
         self._midi_out.send_message(RESET_MESSAGE)

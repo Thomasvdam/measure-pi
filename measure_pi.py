@@ -40,7 +40,7 @@ class MeasurePi:
         self._lp.turn_all_pads_off()
         self._pulse_quarter_notes.reset_pulse()
 
-    def _handle_input(self, event):
+    def _handle_input(self, event, data=None):
         message, deltatime = event
         if message[0] is TIMING_CLOCK:
             self._pulse_quarter_notes.trigger_pulse()
