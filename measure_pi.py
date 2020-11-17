@@ -1,3 +1,4 @@
+import os
 from pulse_tracker import PulseTracker
 from launchpad_mini import LaunchpadMini, COLOUR_ORANGE, COLOUR_GREEN, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_MEDIUM, BRIGHTNESS_HIGH
 from rtmidi.midiconstants import TIMING_CLOCK, SONG_START
@@ -36,6 +37,10 @@ class MeasurePi:
         ]
         self._pulse_periods.on_divisor(self._handle_period)
 
+        # Handle switching Raspberry boot mode
+        self.button_combination = [0, 112, 7, 119]
+        self.buttons_pressed = []
+
         # Reset visualisation
         self._lp.turn_all_pads_off()
         self._pulse_quarter_notes.reset_pulse()
@@ -46,6 +51,18 @@ class MeasurePi:
             self._pulse_quarter_notes.trigger_pulse()
         elif message[0] is SONG_START:
             self._pulse_quarter_notes.reset_pulse()
+        elif message[0] == 144:
+            if message[1] in self.button_combination:
+                if message[2] == 127:
+                    self.buttons_pressed.append(message[1])
+                    if len(buttons_pressed) == 4:
+                        os.system('sudo sh /home/pi/measure_pi/swap_config.sh')
+                        self._lp.turn_pad_on((0, 0))
+                        self._lp.turn_pad_on((0, 7))
+                        self._lp.turn_pad_on((7, 0))
+                        self._lp.turn_pad_on((7, 7))
+                else:
+                    self.buttons_pressed.remove(message[1])
 
     def _handle_quarter_note(self, note_number, reset):
         index = note_number % 16 # len(self._quarter_notes)
