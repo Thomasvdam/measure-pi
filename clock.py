@@ -59,8 +59,9 @@ class Clock:
         if self._phrase % 2 == 1:
             colour = COLOUR_RED
 
-        state = [(colour, brightness)]
+        state = []
         for i in range(0, self._bar):
-            state.insert(0, (colour, BRIGHTNESS_LOW))
+            state.append((colour, BRIGHTNESS_LOW))
+        state.append((colour, brightness))
 
         return state
