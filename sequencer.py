@@ -1,5 +1,5 @@
 import math
-from enum import Enum
+from pulse_tracker import PulseTracker
 from launchpad_mini import COLOUR_GREEN, COLOUR_ORANGE, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_HIGH
 
 EUCLIDIAN = 0
@@ -10,9 +10,13 @@ MAX_LENGTH = 16
 MAX_OFFSET = MAX_LENGTH - 1
 
 class Sequencer:
-    def __init__(self, state=''):
+    def __init__(self, index, onTrigger, state=''):
+        self._index = index
         self._position = 0
         self._playback_pattern = []
+        self._onTrigger = onTrigger
+        self._steps = PulseTracker(24)
+        self._steps.on_divisor(self._handle_step)
 
         self._load_from_state(state)
         self._generate_sequence()
@@ -103,24 +107,29 @@ class Sequencer:
                 self._pattern[step] = 0
 
     #region Timing inputs
-    def on_pulse(self):
-        self._position += 1
-        if self._position >= self._length:
+    def clock_pulse(self):
+        self._steps.clock_pulse()
+    
+    def _handle_step(self, count, reset):
+        if reset:
             self._position = 0
-        return self._trigger()
+        else:
+            self._position += 1
+            if self._position >= self._length:
+                self._position = 0
+
+        self._trigger()
 
     def reset(self):
-        self._position = 0
-        self._trigger()
+        self._steps.reset()
 
     #region Outputs
     def _trigger(self):
         if self.mute:
-            return False
+            return
         if self._playback_pattern[self._position] == 1:
             # TODO trigger pulse
-            return True
-        return False
+            self._onTrigger(self._index)
 
     def draw(self):
         state = []
