@@ -1,4 +1,5 @@
-import measure_pi
+import time
+import sequency
 import sys
 import rtmidi
 
@@ -7,28 +8,32 @@ def main():
     midi_in = rtmidi.MidiIn()
     midi_out = rtmidi.MidiOut()
 
+    midi_in.open_virtual_port()
     # f_midi is the port opened by the Raspberry midi gadget.
-    for index, port in enumerate(midi_in.get_ports()):
-        if 'f_midi' in port:
-            midi_in.open_port(index)
-            print('MIDI in connected')
+    # for index, port in enumerate(midi_in.get_ports()):
+    #     if 'f_midi' in port or 'Launchpad Mini' in port:
+    #         midi_in.open_port(index)
+    #         print('MIDI in connected')
 
     for index, port in enumerate(midi_out.get_ports()):
-        if 'f_midi' in port:
+        if 'f_midi' in port or 'Launchpad Mini' in port:
             midi_out.open_port(index)
             print('MIDI out connected')
 
-    instance = measure_pi.MeasurePi(midi_in, midi_out)
+    instance = sequency.Sequency(midi_in, midi_out)
 
     try:
         while True:
             # Just keep swimming
-            instance
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print('')
 
     finally:
+        instance.done = True
+        instance.kill()
+        instance.join()
         del midi_in
         del midi_out
 

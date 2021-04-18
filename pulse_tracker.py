@@ -6,11 +6,11 @@ class PulseTracker:
         self._divisor = divisor
         self._observers = []
 
-    def trigger_pulse(self):
+    def clock_pulse(self):
         self._pulse_count += 1
         self._on_pulse(False)
 
-    def reset_pulse(self):
+    def reset(self):
         self._pulse_count = 0
         self._on_pulse(True)
 

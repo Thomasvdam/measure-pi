@@ -10,12 +10,12 @@ MAX_LENGTH = 16
 MAX_OFFSET = MAX_LENGTH - 1
 
 class Sequencer:
-    def __init__(self, index, onTrigger, state=''):
+    def __init__(self, index, _on_trigger, state=''):
         self._index = index
         self._position = 0
         self._playback_pattern = []
-        self._onTrigger = onTrigger
-        self._steps = PulseTracker(24)
+        self._on_trigger = _on_trigger
+        self._steps = PulseTracker(6)
         self._steps.on_divisor(self._handle_step)
 
         self._load_from_state(state)
@@ -29,6 +29,9 @@ class Sequencer:
             self._pattern = self._generate_rev_euclidian()
             self._apply_offset()
         elif self._mode is MANUAL:
+            self._pattern = self._playback_pattern or self._pattern
+            if self._length < MAX_LENGTH:
+                self._pattern.extend([0] * (MAX_LENGTH - self._length))
             self._playback_pattern = self._pattern
 
     def _generate_euclidian(self):
@@ -128,8 +131,7 @@ class Sequencer:
         if self.mute:
             return
         if self._playback_pattern[self._position] == 1:
-            # TODO trigger pulse
-            self._onTrigger(self._index)
+            self._on_trigger(self._index)
 
     def draw(self):
         state = []
@@ -138,6 +140,8 @@ class Sequencer:
             brightness = BRIGHTNESS_LOW
             if i >= self._length:
                 colour = COLOUR_RED
+                if self._mode is MANUAL and self._playback_pattern[i] == 1:
+                    brightness = BRIGHTNESS_HIGH
             else:
                 if i == self._position:
                     colour = COLOUR_GREEN
