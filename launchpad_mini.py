@@ -9,6 +9,10 @@ BRIGHTNESS_HIGH = 51
 
 RESET_MESSAGE = [176, 0, 0]
 
+TOP_ROW = [
+    [176, 104], [176, 105], [176, 106], [176, 107], [176, 108], [176, 109], [176, 110], [176, 111]
+]
+
 GRID = [
     [[144, 0], [144, 16], [144, 32], [144, 48], [144, 64], [144, 80], [144, 96], [144, 112]],
     [[144, 1], [144, 17], [144, 33], [144, 49], [144, 65], [144, 81], [144, 97], [144, 113]],
@@ -18,6 +22,7 @@ GRID = [
     [[144, 5], [144, 21], [144, 37], [144, 53], [144, 69], [144, 85], [144, 101], [144, 117]],
     [[144, 6], [144, 22], [144, 38], [144, 54], [144, 70], [144, 86], [144, 102], [144, 118]],
     [[144, 7], [144, 23], [144, 39], [144, 55], [144, 71], [144, 87], [144, 103], [144, 119]],
+    [[144, 8], [144, 24], [144, 40], [144, 56], [144, 72], [144, 88], [144, 104], [144, 120]],
 ]
 
 class LaunchpadMini:
@@ -27,11 +32,19 @@ class LaunchpadMini:
 
     def turn_pad_on(self, location, colour, brightness=BRIGHTNESS_LOW):
         x, y = location
-        self._midi_out.send_message(GRID[x][y] + [colour & brightness])
-    
+        if x == 'T':
+            pad_code = TOP_ROW[y]
+        else:
+            pad_code = GRID[x][y]
+        self._midi_out.send_message(pad_code + [colour & brightness])
+
     def turn_pad_off(self, location):
         x, y = location
-        self._midi_out.send_message(GRID[x][y] + [COLOUR_OFF])
+        if x == 'T':
+            pad_code = TOP_ROW[y]
+        else:
+            pad_code = GRID[x][y]
+        self._midi_out.send_message(pad_code + [COLOUR_OFF])
 
     def turn_all_pads_off(self):
         self._midi_out.send_message(RESET_MESSAGE)
