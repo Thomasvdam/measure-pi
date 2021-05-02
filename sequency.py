@@ -1,5 +1,6 @@
 import threading
 import time
+import os
 from rtmidi.midiconstants import TIMING_CLOCK, SONG_START
 from midi_to_command import map_midi_to_command, COMMAND
 from launchpad_mini import LaunchpadMini, COLOUR_ORANGE, COLOUR_GREEN, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_MEDIUM, BRIGHTNESS_HIGH
@@ -24,6 +25,9 @@ class Sequency(threading.Thread):
         midi_in.set_callback(self._handle_input)
 
         self._lp = LaunchpadMini(midi_in, midi_out)
+
+        self._boot_combo = []
+        self._reboot_set = False
 
         sequence_states = self._load_from_state()
 
@@ -97,6 +101,8 @@ class Sequency(threading.Thread):
             self._change_sequence_mode(args[0])
         elif command_type is COMMAND.MANUAL_INPUT:
             self._input_manual_step(args)
+        elif command_type is COMMAND.BOOT_COMBO:
+            self._handle_boot_combo(args)
 
         self._write_save_state()
 
@@ -112,6 +118,23 @@ class Sequency(threading.Thread):
         active_sequence = self._sequences[self._active_sequence]
         active_sequence.change_mode(mode)
         self._draw_active_sequence()
+
+    def _handle_boot_combo(self, key_event):
+        if self._reboot_set:
+            return
+
+        key, on = key_event
+        if on:
+            self._boot_combo.append(key)
+            if len(self._boot_combo) == 4:
+                self._reboot_set = True
+                for coords in self._boot_combo:
+                    self._lp.turn_pad_on(coords, COLOUR_GREEN, BRIGHTNESS_HIGH)
+                os.system('sudo sh /home/pi/measure_pi/swap_config.sh')
+        else:
+            self._boot_combo.remove(key)
+            self._lp.turn_pad_off(key)
+
 
     def _input_manual_step(self, coords):
         if coords in CIRCLE_COORDS:

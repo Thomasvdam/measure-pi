@@ -10,6 +10,9 @@ class COMMAND:
     TOGGLE_MUTE = 1
     CHANGE_MODE = 2
     MANUAL_INPUT = 3
+    BOOT_COMBO = 4
+
+BOOT_COMBO = [0, 112, 7, 119]
 
 def map_midi_to_command(message, mode = CONTROL_MODE.DEFAULT):
     # LP top row keydown
@@ -28,6 +31,11 @@ def map_midi_to_command(message, mode = CONTROL_MODE.DEFAULT):
     # LP right column, 4th row keydown
     if message[0] == 144 and message[2] == 127 and message[1] == 56:
         return (COMMAND.CHANGE_MODE, (MANUAL,))
+    if message[1] in BOOT_COMBO:
+        x = message[1] % 16
+        y = math.floor(message[1] / 16)
+        # 144 is note on, 127 is note off
+        return (COMMAND.BOOT_COMBO, ((x, y), message[0] == 144))
     # LP buttons for manual input
     if message[0] == 144 and message[2] == 127 and message[1] >= 0 and message[1] <= 120:
         if mode is CONTROL_MODE.DEFAULT:

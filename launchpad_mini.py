@@ -30,22 +30,39 @@ class LaunchpadMini:
     def __init__(self, midi_in, midi_out):
         self._midi_in = midi_in
         self._midi_out = midi_out
+        self._local_state = {}
 
     def turn_pad_on(self, location, colour, brightness=BRIGHTNESS_LOW):
         x, y = location
+        light_setting = colour & brightness
+
+        # Skip redundant messages
+        if location in self._local_state and self._local_state[location] == light_setting:
+            return
+
         if x == 'T':
             pad_code = TOP_ROW[y]
         else:
             pad_code = GRID[x][y]
-        self._midi_out.send_message(pad_code + [colour & brightness])
+        self._midi_out.send_message(pad_code + [light_setting])
+        self._local_state[location] = light_setting
 
     def turn_pad_off(self, location):
         x, y = location
+
+        if location not in self._local_state:
+            return
+
+        if self._local_state[location] == COLOUR_OFF:
+            return
+
         if x == 'T':
             pad_code = TOP_ROW[y]
         else:
             pad_code = GRID[x][y]
         self._midi_out.send_message(pad_code + [COLOUR_OFF])
+        self._local_state[location] = COLOUR_OFF
 
     def turn_all_pads_off(self):
         self._midi_out.send_message(RESET_MESSAGE)
+        self._local_state = {}
