@@ -90,6 +90,9 @@ class Sequencer:
     def toggle_mute(self):
         self.mute = not self.mute
 
+    def set_mute(self, mute):
+        self.mute = mute
+
     def change_length(self, length):
         self._length = length
         self._generate_sequence()

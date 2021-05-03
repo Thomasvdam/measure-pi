@@ -97,6 +97,8 @@ class Sequency(threading.Thread):
             self._change_active_sequence(args[0])
         elif command_type is COMMAND.TOGGLE_MUTE:
             self._toggle_mute()
+        elif command_type is COMMAND.SET_MUTE:
+            self._set_mute(args[0], args[1])
         elif command_type is COMMAND.CHANGE_MODE:
             self._change_sequence_mode(args[0])
         elif command_type is COMMAND.MANUAL_INPUT:
@@ -112,6 +114,10 @@ class Sequency(threading.Thread):
 
     def _toggle_mute(self):
         self._sequences[self._active_sequence].toggle_mute()
+        self._draw_active_sequence()
+
+    def _set_mute(self, index, mute):
+        self._sequences[index].set_mute(mute)
         self._draw_active_sequence()
 
     def _change_sequence_mode(self, mode):

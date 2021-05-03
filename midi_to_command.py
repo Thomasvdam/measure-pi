@@ -8,15 +8,22 @@ class CONTROL_MODE:
 class COMMAND:
     CHANGE_SEQUENCE = 0
     TOGGLE_MUTE = 1
-    CHANGE_MODE = 2
-    MANUAL_INPUT = 3
-    BOOT_COMBO = 4
+    SET_MUTE = 2
+    CHANGE_MODE = 3
+    MANUAL_INPUT = 4
+    BOOT_COMBO = 5
 
 BOOT_COMBO = [0, 112, 7, 119]
 
+BSP_MUTE_TOGGLES = [20, 22, 24, 26, 28, 30, 52, 53]
+
 def map_midi_to_command(message, mode = CONTROL_MODE.DEFAULT):
+    # BSP toggles
+    if message[0] == 176 and message[1] in BSP_MUTE_TOGGLES:
+        index = BSP_MUTE_TOGGLES.index(message[1])
+        return (COMMAND.SET_MUTE, (index, message[2] == 127))
     # LP top row keydown
-    if message[0] == 176 and message[1] >= 104 and message[1] <= 111:
+    if message[0] == 176 and message[2] == 127 and message[1] >= 104 and message[1] <= 111:
         new_index = message[1] - 104
         return (COMMAND.CHANGE_SEQUENCE, (new_index,))
     # LP right column, top row keyup
