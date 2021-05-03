@@ -97,6 +97,16 @@ class Sequencer:
         self._length = length
         self._generate_sequence()
 
+    def increment_length(self):
+        new_length = min(self._length + 1, MAX_LENGTH)
+        if new_length != self._length:
+            self.change_length(new_length)
+
+    def decrement_length(self):
+        new_length = max(1, self._length - 1)
+        if new_length != self._length:
+            self.change_length(new_length)
+
     def change_fill(self, fill):
         self._fill = fill
         self._generate_sequence()

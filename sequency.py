@@ -2,7 +2,7 @@ import threading
 import time
 import os
 from rtmidi.midiconstants import TIMING_CLOCK, SONG_START, SONG_STOP, SONG_CONTINUE
-from midi_to_command import map_midi_to_command, COMMAND
+from midi_to_command import MidiToControl, COMMAND
 from launchpad_mini import LaunchpadMini, COLOUR_ORANGE, COLOUR_GREEN, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_MEDIUM, BRIGHTNESS_HIGH
 from clock import Clock
 from debounce import debounce
@@ -25,6 +25,7 @@ class Sequency(threading.Thread):
         midi_in.set_callback(self._handle_input)
 
         self._lp = LaunchpadMini(midi_in, midi_out)
+        self._controller = MidiToControl()
 
         self._boot_combo = []
         self._reboot_set = False
@@ -85,7 +86,7 @@ class Sequency(threading.Thread):
         elif message[0] is SONG_STOP or message[0] is SONG_CONTINUE:
             pass
         else:
-            command = map_midi_to_command(message)
+            command = self._controller.map_midi_to_command(message)
             self._handle_command(command)
 
         self._draw()
@@ -105,6 +106,10 @@ class Sequency(threading.Thread):
             self._change_sequence_mode(args[0])
         elif command_type is COMMAND.MANUAL_INPUT:
             self._input_manual_step(args)
+        elif command_type is COMMAND.CHANGE_LENGTH_INC:
+            self._increment_sequence_length(args[0])
+        elif command_type is COMMAND.CHANGE_LENGTH_DEC:
+            self._decrement_sequence_length(args[0])
         elif command_type is COMMAND.BOOT_COMBO:
             self._handle_boot_combo(args)
 
@@ -125,6 +130,18 @@ class Sequency(threading.Thread):
     def _change_sequence_mode(self, mode):
         active_sequence = self._sequences[self._active_sequence]
         active_sequence.change_mode(mode)
+        self._draw_active_sequence()
+
+    def _increment_sequence_length(self, index):
+        self._active_sequence = index
+        active_sequence = self._sequences[self._active_sequence]
+        active_sequence.increment_length()
+        self._draw_active_sequence()
+
+    def _decrement_sequence_length(self, index):
+        self._active_sequence = index
+        active_sequence = self._sequences[self._active_sequence]
+        active_sequence.decrement_length()
         self._draw_active_sequence()
 
     def _handle_boot_combo(self, key_event):
