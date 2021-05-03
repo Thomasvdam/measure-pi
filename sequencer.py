@@ -30,8 +30,8 @@ class Sequencer:
             self._apply_offset()
         elif self._mode is MANUAL:
             self._pattern = self._playback_pattern or self._pattern
-            if self._length < MAX_LENGTH:
-                self._pattern.extend([0] * (MAX_LENGTH - self._length))
+            if len(self._pattern) < MAX_LENGTH:
+                self._pattern.extend([0] * (MAX_LENGTH - len(self._pattern)))
             self._playback_pattern = self._pattern
 
     def _generate_euclidian(self):
