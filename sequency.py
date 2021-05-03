@@ -1,7 +1,7 @@
 import threading
 import time
 import os
-from rtmidi.midiconstants import TIMING_CLOCK, SONG_START
+from rtmidi.midiconstants import TIMING_CLOCK, SONG_START, SONG_STOP, SONG_CONTINUE
 from midi_to_command import map_midi_to_command, COMMAND
 from launchpad_mini import LaunchpadMini, COLOUR_ORANGE, COLOUR_GREEN, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_MEDIUM, BRIGHTNESS_HIGH
 from clock import Clock
@@ -82,6 +82,8 @@ class Sequency(threading.Thread):
             self._clock.reset()
             for seq in self._sequences:
                 seq.reset()
+        elif message[0] is SONG_STOP or message[0] is SONG_CONTINUE:
+            pass
         else:
             command = map_midi_to_command(message)
             self._handle_command(command)
