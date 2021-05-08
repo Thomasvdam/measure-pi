@@ -93,32 +93,42 @@ class Sequencer:
     def set_mute(self, mute):
         self.mute = mute
 
-    def change_length(self, length):
+    def _change_length(self, length):
         self._length = length
         self._generate_sequence()
 
     def increment_length(self):
         new_length = min(self._length + 1, MAX_LENGTH)
         if new_length != self._length:
-            self.change_length(new_length)
+            self._change_length(new_length)
 
     def decrement_length(self):
         new_length = max(1, self._length - 1)
         if new_length != self._length:
-            self.change_length(new_length)
+            self._change_length(new_length)
 
-    def set_fill(self, fill):
+    def _set_fill(self, fill):
         self._fill = fill
         self._generate_sequence()
 
     def change_fill(self, delta):
         new_fill = max(0, min(self._fill + delta, 100))
         if new_fill != self._fill:
-            self.set_fill(new_fill)
+            self._set_fill(new_fill)
 
-    def change_offset(self, offset):
+    def _change_offset(self, offset):
         self._offset = offset
         self._apply_offset()
+
+    def increment_offset(self):
+        new_offset = min(self._offset + 1, self._length - 1)
+        if new_offset != self._offset:
+            self._change_offset(new_offset)
+
+    def decrement_offset(self):
+        new_offset = max(0, self._offset - 1)
+        if new_offset != self._offset:
+            self._change_offset(new_offset)
 
     def manual_input(self, step):
         if self._mode is MANUAL:

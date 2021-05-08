@@ -15,6 +15,8 @@ class COMMAND:
     CHANGE_LENGTH_INC = 5
     CHANGE_LENGTH_DEC = 6
     CHANGE_FILL = 7
+    CHANGE_OFFSET_INC = 8
+    CHANGE_OFFSET_DEC = 9
     BOOT_COMBO = 1337
 
 BOOT_COMBO = [0, 112, 7, 119]
@@ -24,8 +26,26 @@ BSP_BOTTOM_KNOBS = [114, 18, 19, 16, 17, 91, 79, 72]
 BSP_MUTE_TOGGLES = [20, 22, 24, 26, 28, 30, 52, 53]
 
 class MidiToControl:
+    def __init__(self):
+        self._mod_down = False
+
     def map_midi_to_command(self, message, mode = CONTROL_MODE.DEFAULT):
+        # BSP top left pad
+        if (message[0] == 144 or message[0] == 128) and message[1] == 44:
+            self._mod_down = message[0] == 144
+            return (COMMAND.NONE, None)
         # BSP knobs
+        if message[0] == 176 and message[1] in BSP_TOP_KNOBS:
+            index = BSP_TOP_KNOBS.index(message[1])
+            if message[2] == 64:
+                return (COMMAND.NONE, None)
+            if self._mod_down:
+                if message[2] > 64:
+                    return (COMMAND.CHANGE_OFFSET_INC, (index,))
+                if message[2] < 64:
+                    return (COMMAND.CHANGE_OFFSET_DEC, (index,))
+            else:
+                return (COMMAND.CHANGE_FILL, (index, message[2] - 64))
         if message[0] == 176 and message[1] in BSP_BOTTOM_KNOBS:
             index = BSP_BOTTOM_KNOBS.index(message[1])
             if message[2] == 64:
@@ -34,12 +54,6 @@ class MidiToControl:
                 return (COMMAND.CHANGE_LENGTH_INC, (index,))
             if message[2] < 64:
                 return (COMMAND.CHANGE_LENGTH_DEC, (index,))
-        if message[0] == 176 and message[1] in BSP_TOP_KNOBS:
-            index = BSP_TOP_KNOBS.index(message[1])
-            if message[2] == 64:
-                return (COMMAND.NONE, None)
-            else:
-                return (COMMAND.CHANGE_FILL, (index, message[2] - 64))
         # BSP toggles
         if message[0] == 176 and message[1] in BSP_MUTE_TOGGLES:
             index = BSP_MUTE_TOGGLES.index(message[1])
