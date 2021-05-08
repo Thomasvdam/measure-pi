@@ -110,6 +110,8 @@ class Sequency(threading.Thread):
             self._increment_sequence_length(args[0])
         elif command_type is COMMAND.CHANGE_LENGTH_DEC:
             self._decrement_sequence_length(args[0])
+        elif command_type is COMMAND.CHANGE_FILL:
+            self._change_fill(args[0], args[1])
         elif command_type is COMMAND.BOOT_COMBO:
             self._handle_boot_combo(args)
 
@@ -142,6 +144,12 @@ class Sequency(threading.Thread):
         self._active_sequence = index
         active_sequence = self._sequences[self._active_sequence]
         active_sequence.decrement_length()
+        self._draw_active_sequence()
+
+    def _change_fill(self, index, delta):
+        self._active_sequence = index
+        active_sequence = self._sequences[self._active_sequence]
+        active_sequence.change_fill(delta)
         self._draw_active_sequence()
 
     def _handle_boot_combo(self, key_event):

@@ -107,9 +107,14 @@ class Sequencer:
         if new_length != self._length:
             self.change_length(new_length)
 
-    def change_fill(self, fill):
+    def set_fill(self, fill):
         self._fill = fill
         self._generate_sequence()
+
+    def change_fill(self, delta):
+        new_fill = max(0, min(self._fill + delta, 100))
+        if new_fill != self._fill:
+            self.set_fill(new_fill)
 
     def change_offset(self, offset):
         self._offset = offset
