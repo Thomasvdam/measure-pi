@@ -63,15 +63,21 @@ class Sequency(threading.Thread):
         return COLOUR_ORANGE
 
     def _on_trigger(self, index):
-        # TODO send pulse + light up correct pads BSP
+        self._midi_out.send_message([153, 36 + index, 64])
+        bsp_lp = threading.Timer(0.06, self._end_trigger_bsp, [index])
+        bsp_lp.start()
+
         colour = self._get_sequence_colour(index)
         self._lp.turn_pad_on(('T', index), colour, BRIGHTNESS_HIGH)
-        t = threading.Timer(0.1, self._end_trigger, [index])
-        t.start()
+        t_lp = threading.Timer(0.1, self._end_trigger_lp, [index])
+        t_lp.start()
     
-    def _end_trigger(self, index):
+    def _end_trigger_lp(self, index):
         colour = self._get_sequence_colour(index)
         self._lp.turn_pad_on(('T', index), colour, BRIGHTNESS_LOW)
+
+    def _end_trigger_bsp(self, index):
+        self._midi_out.send_message([137, 36 + index, 64])
 
     def _handle_input(self, event, data=None):
         message, deltatime = event
