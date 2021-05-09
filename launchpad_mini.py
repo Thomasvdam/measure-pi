@@ -53,15 +53,12 @@ class LaunchpadMini:
         if location not in self._local_state:
             return
 
-        if self._local_state[location] == COLOUR_OFF:
-            return
-
         if x == 'T':
             pad_code = TOP_ROW[y]
         else:
             pad_code = GRID[x][y]
         self._midi_out.send_message(pad_code + [COLOUR_OFF])
-        self._local_state[location] = COLOUR_OFF
+        del self._local_state[location]
 
     def turn_all_pads_off(self):
         self._midi_out.send_message(RESET_MESSAGE)

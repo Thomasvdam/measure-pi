@@ -1,6 +1,6 @@
 import math
 from pulse_tracker import PulseTracker
-from launchpad_mini import COLOUR_GREEN, COLOUR_ORANGE, COLOUR_RED, BRIGHTNESS_LOW, BRIGHTNESS_HIGH
+from launchpad_mini import COLOUR_GREEN, COLOUR_ORANGE, COLOUR_RED, COLOUR_OFF, BRIGHTNESS_LOW, BRIGHTNESS_HIGH
 
 EUCLIDIAN = 0
 REV_EUCLIDIAN = 1
@@ -8,6 +8,13 @@ MANUAL = 2
 
 MAX_LENGTH = 16
 MAX_OFFSET = MAX_LENGTH - 1
+
+CHAN_MIN = 2
+CHAN_MAX = 16
+CHAN_DEFAULT = 10
+NOTE_MIN = 0
+NOTE_MAX = 127
+NOTE_DEFAULT = 35
 
 class Sequencer:
     def __init__(self, index, _on_trigger, state=''):
@@ -130,6 +137,24 @@ class Sequencer:
         if new_offset != self._offset:
             self._change_offset(new_offset)
 
+    def increment_channel(self):
+        new_channel = min(self._channel + 1, CHAN_MAX)
+        if new_channel != self._channel:
+            self._channel = new_channel
+            self._trigger(True)
+
+    def decrement_channel(self):
+        new_channel = max(CHAN_MIN, self._channel - 1)
+        if new_channel != self._channel:
+            self._channel = new_channel
+            self._trigger(True)
+
+    def change_note(self, delta):
+        new_note = max(NOTE_MIN, min(self._note + delta, NOTE_MAX))
+        if new_note != self._note:
+            self._note = new_note
+            self._trigger(True)
+
     def manual_input(self, step):
         if self._mode is MANUAL:
             if self._pattern[step] == 0:
@@ -155,11 +180,15 @@ class Sequencer:
         self._steps.reset()
 
     #region Outputs
-    def _trigger(self):
+    def _trigger(self, preview = False):
+        if preview:
+            self._on_trigger(self._index, self._channel, self._note)
+            return
+
         if self.mute:
             return
         if self._playback_pattern[self._position] == 1:
-            self._on_trigger(self._index)
+            self._on_trigger(self._index, self._channel, self._note)
 
     def draw(self):
         state = []
@@ -178,10 +207,34 @@ class Sequencer:
             state.append((colour, brightness))
         return state
 
+    def draw_settings(self):
+        state = []
+        for mode in [(EUCLIDIAN, COLOUR_GREEN), (REV_EUCLIDIAN, COLOUR_ORANGE), (MANUAL, COLOUR_RED)]:
+            if self._mode is mode[0]:
+                state.append((mode[1], BRIGHTNESS_HIGH))
+            else:
+                state.append((mode[1], BRIGHTNESS_LOW))
+        for bit in [16, 8, 4, 2, 1]:
+            if self._channel & bit == bit:
+                state.append((COLOUR_ORANGE, BRIGHTNESS_HIGH))
+            else:
+                state.append((COLOUR_ORANGE, BRIGHTNESS_LOW))
+        state.append((COLOUR_OFF, BRIGHTNESS_LOW))
+        for bit in [64, 32, 16, 8, 4, 2, 1]:
+            if self._note & bit == bit:
+                state.append((COLOUR_GREEN, BRIGHTNESS_HIGH))
+            else:
+                state.append((COLOUR_GREEN, BRIGHTNESS_LOW))
+        return state
+
     #region Persistence
     def get_save_state(self):
         state_string = ''
         state_string += str(self._mode)
+        state_string += '|'
+        state_string += str(self._channel)
+        state_string += '|'
+        state_string += str(self._note)
         state_string += '|'
         if self.mute:
             state_string += '1'
@@ -204,7 +257,7 @@ class Sequencer:
         else:
             try:
                 state_parts = state.split('|')
-                if len(state_parts) != 6:
+                if len(state_parts) != 8:
                     self._restore_defaults()
                     return
                 # Mode
@@ -218,11 +271,29 @@ class Sequencer:
                         self._mode = EUCLIDIAN
                 except:
                     self._mode = EUCLIDIAN
+                # Channel
+                try:
+                    channel = int(state_parts[1])
+                    if channel >= CHAN_MIN  and channel <= CHAN_MAX:
+                        self._channel = channel
+                    else:
+                        self._channel = CHAN_DEFAULT
+                except:
+                    self._channel = CHAN_DEFAULT
+                # Note
+                try:
+                    note = int(state_parts[2])
+                    if note >= NOTE_MIN and note <= NOTE_MAX:
+                        self._note = note
+                    else:
+                        self._note = NOTE_DEFAULT
+                except:
+                    self._note = NOTE_DEFAULT
                 # Mute
-                self.mute = state_parts[1] == '1'
+                self.mute = state_parts[3] == '1'
                 # Length
                 try:
-                    length = int(state_parts[2])
+                    length = int(state_parts[4])
                     if length > 0 and length <= MAX_LENGTH:
                         self._length = length
                     else:
@@ -231,7 +302,7 @@ class Sequencer:
                     self._length = MAX_LENGTH
                 # Fill
                 try:
-                    fill = int(state_parts[3])
+                    fill = int(state_parts[5])
                     if fill >= 0 and fill <= 100:
                         self._fill = fill
                     else:
@@ -240,7 +311,7 @@ class Sequencer:
                     self._offset = 0
                 # Offset
                 try:
-                    offset = int(state_parts[4])
+                    offset = int(state_parts[6])
                     if offset >= 0 and offset <= MAX_OFFSET:
                         self._offset = offset
                     else:
@@ -249,7 +320,7 @@ class Sequencer:
                     self._offset = 0
                 # Pattern
                 try:
-                    raw_pattern = state_parts[5].split(',')
+                    raw_pattern = state_parts[7].split(',')
                     pattern = []
                     for step in raw_pattern:
                         if step == '1':
@@ -264,6 +335,8 @@ class Sequencer:
 
     def _restore_defaults(self):
         self._mode = EUCLIDIAN
+        self._channel = CHAN_DEFAULT
+        self._note = NOTE_DEFAULT
         self.mute = False
         self._length = MAX_LENGTH
         self._fill = 0
