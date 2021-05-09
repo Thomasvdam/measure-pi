@@ -27,7 +27,7 @@ BOOT_COMBO = [0, 112, 7, 119]
 
 BSP_TOP_KNOBS = [10, 74, 71, 76, 77, 93, 73, 75]
 BSP_BOTTOM_KNOBS = [114, 18, 19, 16, 17, 91, 79, 72]
-BSP_MUTE_TOGGLES = [20, 22, 24, 26, 28, 30, 52, 53]
+BSP_MUTE_TOGGLES = [20, 22, 24, 26, 28, 30, 52, 54]
 
 class MidiToControl:
     def __init__(self):
