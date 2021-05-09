@@ -51,7 +51,8 @@ class Sequency(threading.Thread):
     def run(self):
         self.done = False
 
-        time.sleep(1)
+        time.sleep(5)
+        self._startup_animation()
 
         self._draw_active_sequence()
         self._draw()
@@ -61,6 +62,14 @@ class Sequency(threading.Thread):
 
     def kill(self):
         self._write_save_state_raw()
+        self._lp.turn_all_pads_off()
+
+    def _startup_animation(self):
+        for colour in [COLOUR_RED, COLOUR_ORANGE, COLOUR_GREEN]:
+            for brightness in [BRIGHTNESS_LOW, BRIGHTNESS_MEDIUM, BRIGHTNESS_HIGH]:
+                for coords in CIRCLE_COORDS:
+                    self._lp.turn_pad_on(coords, colour, brightness)
+                    time.sleep(0.01)
         self._lp.turn_all_pads_off()
 
     def _get_sequence_colour(self, index):
