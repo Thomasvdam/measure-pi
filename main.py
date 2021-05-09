@@ -8,15 +8,14 @@ def main():
     midi_in = rtmidi.MidiIn()
     midi_out = rtmidi.MidiOut()
 
-    midi_in.open_virtual_port()
     # f_midi is the port opened by the Raspberry midi gadget.
-    # for index, port in enumerate(midi_in.get_ports()):
-    #     if 'f_midi' in port or 'Launchpad Mini' in port:
-    #         midi_in.open_port(index)
-    #         print('MIDI in connected')
+    for index, port in enumerate(midi_in.get_ports()):
+        if 'f_midi' in port:
+            midi_in.open_port(index)
+            print('MIDI in connected')
 
     for index, port in enumerate(midi_out.get_ports()):
-        if 'f_midi' in port or 'Launchpad Mini' in port:
+        if 'f_midi' in port:
             midi_out.open_port(index)
             print('MIDI out connected')
 
@@ -24,7 +23,7 @@ def main():
 
     try:
         while True:
-            # Just keep swimming
+            # Just keep sleeping
             time.sleep(1)
 
     except KeyboardInterrupt:
