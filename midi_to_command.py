@@ -28,12 +28,17 @@ BOOT_COMBO = [0, 112, 7, 119]
 BSP_TOP_KNOBS = [10, 74, 71, 76, 77, 93, 73, 75]
 BSP_BOTTOM_KNOBS = [114, 18, 19, 16, 17, 91, 79, 72]
 BSP_MUTE_TOGGLES = [20, 22, 24, 26, 28, 30, 52, 54]
+BSP_SELECT_BUTTONS = [21, 23, 25, 27, 29, 31, 53, 55]
 
 class MidiToControl:
     def __init__(self):
         self._mod_down = False
 
     def map_midi_to_command(self, message, mode = CONTROL_MODE.DEFAULT):
+        # Sequence selection is mode agnostic
+        if message[0] == 176 and message[1] in BSP_SELECT_BUTTONS:
+            new_index = BSP_SELECT_BUTTONS.index(message[1])
+            return (COMMAND.CHANGE_SEQUENCE, (new_index,))
         if mode is CONTROL_MODE.DEFAULT:
             return self.map_midi_to_default_command(message)
         elif mode is CONTROL_MODE.SETTINGS:
