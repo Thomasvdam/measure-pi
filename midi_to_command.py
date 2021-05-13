@@ -15,9 +15,10 @@ class COMMAND:
     MANUAL_INPUT = 5
     CHANGE_LENGTH_INC = 6
     CHANGE_LENGTH_DEC = 7
-    CHANGE_FILL = 8
-    CHANGE_OFFSET_INC = 9
-    CHANGE_OFFSET_DEC = 10
+    CHANGE_FILL_INC = 8
+    CHANGE_FILL_DEC = 9
+    CHANGE_OFFSET_INC = 10
+    CHANGE_OFFSET_DEC = 11
     CHANGE_CHANNEL_INC = 100
     CHANGE_CHANNEL_DEC = 101
     CHANGE_NOTE_REL = 102
@@ -60,7 +61,10 @@ class MidiToControl:
                 if message[2] < 64:
                     return (COMMAND.CHANGE_OFFSET_DEC, (index,))
             else:
-                return (COMMAND.CHANGE_FILL, (index, message[2] - 64))
+                if message[2] > 64:
+                    return (COMMAND.CHANGE_FILL_INC, (index,))
+                if message[2] < 64:
+                    return (COMMAND.CHANGE_FILL_DEC, (index,))
         if message[0] == 176 and message[1] in BSP_BOTTOM_KNOBS:
             index = BSP_BOTTOM_KNOBS.index(message[1])
             if message[2] == 64:

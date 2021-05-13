@@ -137,8 +137,10 @@ class Sequency(threading.Thread):
             self._increment_sequence_length(args[0])
         elif command_type is COMMAND.CHANGE_LENGTH_DEC:
             self._decrement_sequence_length(args[0])
-        elif command_type is COMMAND.CHANGE_FILL:
-            self._change_fill(args[0], args[1])
+        elif command_type is COMMAND.CHANGE_FILL_INC:
+            self._increment_fill(args[0])
+        elif command_type is COMMAND.CHANGE_FILL_DEC:
+            self._decrement_fill(args[0])
         elif command_type is COMMAND.CHANGE_OFFSET_INC:
             self._increment_sequence_offset(args[0])
         elif command_type is COMMAND.CHANGE_OFFSET_DEC:
@@ -191,10 +193,16 @@ class Sequency(threading.Thread):
         active_sequence.decrement_length()
         self._draw_active_sequence()
 
-    def _change_fill(self, index, delta):
+    def _increment_fill(self, index):
         self._active_sequence = index
         active_sequence = self._sequences[self._active_sequence]
-        active_sequence.change_fill(delta)
+        active_sequence.increment_fill()
+        self._draw_active_sequence()
+
+    def _decrement_fill(self, index):
+        self._active_sequence = index
+        active_sequence = self._sequences[self._active_sequence]
+        active_sequence.decrement_fill()
         self._draw_active_sequence()
 
     def _increment_sequence_offset(self, index):

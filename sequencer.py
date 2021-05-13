@@ -118,8 +118,17 @@ class Sequencer:
         self._fill = fill
         self._generate_sequence()
 
-    def change_fill(self, delta):
-        new_fill = max(0, min(self._fill + delta, 100))
+    def increment_fill(self):
+        pulses = int(math.floor(float(self._length) / 100 * self._fill))
+        new_pulses = min(pulses + 1, self._length)
+        new_fill = int(math.ceil(float(new_pulses) / float(self._length) * 100))
+        if new_fill != self._fill:
+            self._set_fill(new_fill)
+
+    def decrement_fill(self):
+        pulses = int(math.floor(float(self._length) / 100 * self._fill))
+        new_pulses = max(0, pulses - 1)
+        new_fill = int(math.ceil(float(new_pulses) / float(self._length) * 100))
         if new_fill != self._fill:
             self._set_fill(new_fill)
 
