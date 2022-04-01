@@ -4,9 +4,10 @@ import os
 from rtmidi.midiconstants import TIMING_CLOCK, SONG_START, SONG_STOP, SONG_CONTINUE
 from debounce import debounce
 from clock import Clock
-from launchcontrol_xl import LaunchControlXL, INPUT
+from launchcontrol_xl import LaunchControlXL, INPUT, COLOUR
 from single_knob_channel import SingleKnobChannel
 from fader_channel import FaderChannel
+from startup_animation import STARTUP_ANIMATION
 
 BOOT_COMBO = { INPUT.BUTTON_LEFT, INPUT.BUTTON_RIGHT, INPUT.BUTTON_UP, INPUT.BUTTON_DOWN }
 class PARSING_TYPE:
@@ -40,27 +41,20 @@ class DarthFader(threading.Thread):
 
         self.start()
 
-    def _handle_boot_combo(self, button, velocity):
-        if self._reboot_set:
-            return
-
-        if velocity > 0:
-            self._boot_combo.append(button)
-            if len(self._boot_combo) == 4:
-                self._reboot_set = True
-                self._launch_control.switch_side_buttons(map(lambda button : (button, True), self._boot_combo))
-                print('Swapping config')
-                os.system('sudo sh /home/pi/measure_pi/swap_config.sh')
-        else:
-            self._boot_combo.remove(button)
-            self._launch_control.switch_side_button(button, False)
-
     def run(self):
         self.done = False
 
+        self._launch_control.enable_flashing()
         self._launch_control.reset()
+
+        time.sleep(5)
+        for leds in STARTUP_ANIMATION:
+            self._launch_control.set_column_leds(leds)
+            time.sleep(0.075)
+
+        self._launch_control.reset()
+
         self._clock.reset()
-        self._write_save_state()
 
         while not self.done:
             time.sleep(0.02)
@@ -85,7 +79,11 @@ class DarthFader(threading.Thread):
         if input in BOOT_COMBO:
             self._handle_boot_combo(input, value)
 
-        if input is INPUT.KNOB_1:
+        if input is INPUT.BUTTON_DEVICE:
+            for i in range(0,8):
+                self._simple_channels[i].toggle_momentary(value == 127)
+                self._fader_channels[i].toggle_momentary(value == 127)
+        elif input is INPUT.KNOB_1:
             self._simple_channels[column].update_value(value)
         elif input is INPUT.KNOB_2:
             self._fader_channels[column].update_range_max(value)
@@ -95,6 +93,20 @@ class DarthFader(threading.Thread):
             self._fader_channels[column].update_value(value)
 
         self._write_save_state()
+
+    def _handle_boot_combo(self, button, velocity):
+        if self._reboot_set:
+            return
+
+        if velocity > 0:
+            self._boot_combo.append(button)
+            if len(self._boot_combo) == 4:
+                self._reboot_set = True
+                self._launch_control.switch_side_buttons(map(lambda button : (button, True), self._boot_combo))
+                print('Swapping config')
+                os.system('sudo sh /home/pi/measure_pi/swap_config.sh')
+        else:
+            self._boot_combo.remove(button)
 
     # Loading and writing long term storage
     def _load_from_state(self):
@@ -119,6 +131,8 @@ class DarthFader(threading.Thread):
                     states[parsing_type].append(line)
             f.close()
 
+            if len(states[PARSING_TYPE.SIMPLE]) != 8 or len(states[PARSING_TYPE.FADER]) != 8:
+                raise Exception('Invalid file, wrong number of channels')
             return states
         except Exception as e:
             print(e)

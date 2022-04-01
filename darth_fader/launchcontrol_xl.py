@@ -15,6 +15,15 @@ class INPUT:
     BUTTON_SOLO = 12
     BUTTON_REC = 13
 
+class COLOUR:
+    OFF = 12
+    RED = 15
+    AMBER = 63
+    GREEN = 60
+    RED_FLASHING = 11
+    AMBER_FLASHING = 59
+    GREEN_FLASHING = 56
+
 ROW_MAP = {
     0: INPUT.KNOB_1,
     1: INPUT.KNOB_2,
@@ -72,6 +81,9 @@ class LaunchControlXL:
 
     def reset(self):
         self._midi_out.send_message([176 + TEMPLATE_INDEX, 0, 0])
+
+    def enable_flashing(self):
+        self._midi_out.send_message([176 + TEMPLATE_INDEX, 0, 40])
 
     def message_to_input(self, message):
         channel = message[0]

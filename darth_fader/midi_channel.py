@@ -1,8 +1,10 @@
-from launchcontrol_xl import INPUT
+from launchcontrol_xl import INPUT, COLOUR
 
 DEFAULT_VALUE = 0
 DEFAULT_OFFSET = 0
 DEFAULT_RANGE_MAX = 127
+
+LATCH_THRESHOLD = 2
 
 class MidiChannel:
     def __init__(self, midi_out, launch_control, control, state_string):
@@ -10,7 +12,21 @@ class MidiChannel:
         self._launch_control = launch_control
         self._control = control
 
+        self._momentary_on = False
+        self._momentary_latched = True
+        self._momentary_value = 0
+
         self._load_from_state_string(state_string)
+
+    def toggle_momentary(self, on):
+        self._momentary_on = on
+        if self._momentary_on:
+            self._momentary_value = self._value
+        else:
+            self._momentary_latched = False
+            self._check_latching()
+            self.update_leds(self._get_led_colour())
+            self.send_value_message(self._momentary_value)
 
     def update_offset(self, new_offset):
         self._offset = max(0, min(127, new_offset))
@@ -22,13 +38,43 @@ class MidiChannel:
 
     def update_value(self, value):
         self._value = value
+        self._check_latching()
+        self.update_leds(self._get_led_colour())
         self.emit_value()
 
     def emit_value(self):
+        if not self._momentary_latched:
+            return
+
         percentage = self._value / 127
         base_value = round(percentage * self._range_max)
         value = min(127, self._offset + base_value)
+        self.send_value_message(value)
+
+    def send_value_message(self, value):
         self._midi_out.send_message([183, self._control, value])
+
+    # TODO rework this to a 'state' when introducing automation lanes
+    def _get_led_colour(self):
+        if self._momentary_latched:
+            if not self._momentary_on:
+                return COLOUR.OFF
+            else:
+                colour = COLOUR.AMBER if self._value != self._momentary_value else COLOUR.OFF
+                return colour
+        colour = COLOUR.RED if self._value < self._momentary_value else COLOUR.GREEN
+        return colour
+
+    def _check_latching(self):
+        if self._momentary_latched:
+            return
+
+        latch_value = self._momentary_value
+        if abs(latch_value - self._value) < LATCH_THRESHOLD:
+            self._momentary_latched = True
+
+    def update_leds(self, colour):
+        print('Up to the inheriting class to implement. Poor design but whatever.')
 
     # State string format:
     # <value>,<offset>,<range_max>
