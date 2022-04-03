@@ -5,6 +5,7 @@ DEFAULT_OFFSET = 0
 DEFAULT_RANGE_MAX = 127
 
 LATCH_THRESHOLD = 2
+MIDI_CHANNEL_OUT = 1
 
 class MidiChannel:
     def __init__(self, midi_out, launch_control, control, state_string):
@@ -13,7 +14,8 @@ class MidiChannel:
         self._control = control
 
         self._momentary_on = False
-        self._momentary_latched = True
+        # Best not to assume no pots/sliders have changed
+        self._momentary_latched = False
         self._momentary_value = 0
 
         self._load_from_state_string(state_string)
@@ -52,7 +54,7 @@ class MidiChannel:
         self.send_value_message(value)
 
     def send_value_message(self, value):
-        self._midi_out.send_message([183, self._control, value])
+        self._midi_out.send_message([176 + MIDI_CHANNEL_OUT, self._control, value])
 
     # TODO rework this to a 'state' when introducing automation lanes
     def _get_led_colour(self):
