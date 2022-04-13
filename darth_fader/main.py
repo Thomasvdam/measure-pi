@@ -35,7 +35,7 @@ def main():
 
     finally:
         instance.done = True
-        # instance.kill()
+        instance.kill()
         instance.join()
         del midi_in
         del midi_out
