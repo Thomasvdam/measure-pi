@@ -63,7 +63,7 @@ class DarthFader(threading.Thread):
             self._fader_channels[i].send_value_message()
 
         while not self.done:
-            time.sleep(0.02)
+            time.sleep(0.001)
 
     def _handle_input(self, event, data=None):
         message, deltatime = event
