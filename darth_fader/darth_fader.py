@@ -27,6 +27,8 @@ class DarthFader(threading.Thread):
         self._boot_combo = []
         self._reboot_set = False
 
+        self._momentary = False
+
         self._launch_control = LaunchControlXL(midi_in, midi_out)
         self._clock = Clock(self._launch_control)
 
@@ -84,9 +86,7 @@ class DarthFader(threading.Thread):
             self._handle_boot_combo(input, value)
 
         if input is INPUT.BUTTON_DEVICE:
-            for i in range(0,8):
-                self._simple_channels[i].toggle_momentary(value == 127)
-                self._fader_channels[i].toggle_momentary(value == 127)
+            self._handle_momentary(value == 127)
         elif input is INPUT.KNOB_1:
             self._simple_channels[column].update_value(value)
         elif input is INPUT.KNOB_2:
@@ -111,6 +111,29 @@ class DarthFader(threading.Thread):
                 os.system('sudo sh /home/pi/measure_pi/swap_config.sh')
         else:
             self._boot_combo.remove(button)
+
+    # First downpress should start momentary mode, first release should do nothing
+    # Second downpress should do nothing, second release should stop momentary mode
+    def _handle_momentary(self, on):
+        if on:
+            # First downpress
+            if not self._momentary:
+                self._momentary = True
+                for i in range(0,8):
+                    self._simple_channels[i].toggle_momentary(self._momentary)
+                    self._fader_channels[i].toggle_momentary(self._momentary)
+            # Second downpress
+            else:
+                self._momentary = False
+        else:
+            # First release
+            if self._momentary:
+                return
+            # Second release
+            else:
+                for i in range(0,8):
+                    self._simple_channels[i].toggle_momentary(self._momentary)
+                    self._fader_channels[i].toggle_momentary(self._momentary)
 
     # Loading and writing long term storage
     def _load_from_state(self):
