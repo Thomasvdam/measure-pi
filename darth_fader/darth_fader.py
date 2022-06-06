@@ -59,8 +59,8 @@ class DarthFader(threading.Thread):
 
         # Attempt to sync outside world to restored state
         for i in range(0,8):
-            self._simple_channels[i].send_value_message()
-            self._fader_channels[i].send_value_message()
+            self._simple_channels[i].emit_value()
+            self._fader_channels[i].emit_value()
 
         while not self.done:
             time.sleep(0.001)

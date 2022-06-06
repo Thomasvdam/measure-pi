@@ -14,7 +14,7 @@ class MidiChannel:
         self._control = control
 
         self._momentary_on = False
-        # Best not to assume no pots/sliders have changed
+        # Best to assume pots/sliders have changed
         self._momentary_latched = False
         self._momentary_value = 0
 
@@ -28,33 +28,32 @@ class MidiChannel:
             self._momentary_latched = False
             self._check_latching()
             self.update_leds(self._get_led_colour())
-            self.send_value_message(self._momentary_value)
+            self.emit_value(self._momentary_value)
 
     def update_offset(self, new_offset):
         self._offset = max(0, min(127, new_offset))
-        self.emit_value()
+        self.emit_value(self._value)
 
     def update_range_max(self, new_range_max):
         self._range_max = max(1, min(127, new_range_max))
-        self.emit_value()
+        self.emit_value(self._value)
 
-    def update_value(self, value):
-        self._value = value
+    def update_value(self, new_value):
+        self._value = new_value
         self._check_latching()
         self.update_leds(self._get_led_colour())
-        self.emit_value()
+        self.emit_value(self._value)
 
-    def emit_value(self):
+    def emit_value(self, value = None):
         if not self._momentary_latched:
             return
 
-        percentage = self._value / 127
-        base_value = round(percentage * self._range_max)
-        value = min(127, self._offset + base_value)
-        self.send_value_message(value)
+        value = self._value if value is None else value
 
-    def send_value_message(self, value):
-        self._midi_out.send_message([176 + MIDI_CHANNEL_OUT, self._control, value])
+        percentage = value / 127
+        base_value = round(percentage * self._range_max)
+        offset_value = min(127, self._offset + base_value)
+        self._midi_out.send_message([176 + MIDI_CHANNEL_OUT, self._control, offset_value])
 
     # TODO rework this to a 'state' when introducing automation lanes
     def _get_led_colour(self):
